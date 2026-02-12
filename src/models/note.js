@@ -15,6 +15,9 @@ const noteSchema = new mongoose.Schema(
     tag: {
       type: String,
       enum: [
+        'Todo',
+        'Work',
+        'Personal',
         'Meeting',
         'Shopping',
         'Ideas',
@@ -23,7 +26,7 @@ const noteSchema = new mongoose.Schema(
         'Health',
         'Important'
       ],
-      default: 'Meeting',
+      default: 'Todo',
       trim: true,
     },
   },
