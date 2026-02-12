@@ -6,6 +6,7 @@ import { logger } from './middleware/logger.js';
 import notesRouter from './routes/notesRoutes.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { errors as celebrateErrors } from 'celebrate'; 
 
 dotenv.config();
 
@@ -19,6 +20,9 @@ app.use(logger);
 
 /* ---------- Routes ---------- */
 app.use(notesRouter);
+
+/* ---------- Celebrate validation errors ---------- */
+app.use(celebrateErrors()); 
 
 /* ---------- Handlers ---------- */
 app.use(notFoundHandler);
