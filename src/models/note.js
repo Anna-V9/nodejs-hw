@@ -5,10 +5,18 @@ const noteSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+      trim: true, 
     },
     content: {
       type: String,
-      required: true,
+      default: '', 
+      trim: true,
+    },
+    tag: {
+      type: String,
+      enum: ['Todo', 'Work', 'Personal', 'Other'], 
+      default: 'Todo', 
+      trim: true,
     },
   },
   { timestamps: true }
