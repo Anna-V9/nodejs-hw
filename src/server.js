@@ -9,6 +9,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { errors as celebrateErrors } from 'celebrate';
 import cookieParser from 'cookie-parser';
+import userRouter from './routes/userRoutes.js';
 
 dotenv.config();
 
@@ -22,8 +23,9 @@ app.use(cookieParser());
 app.use(logger);
 
 /* ---------- Routes ---------- */
-app.use(notesRouter);    // без префікса
-app.use(authRouter);     // без префікса
+app.use(notesRouter);
+app.use(authRouter);
+app.use(userRouter);  
 
 /* ---------- Celebrate validation errors ---------- */
 app.use(celebrateErrors());
