@@ -7,6 +7,7 @@ import notesRouter from './routes/notesRoutes.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { errors as celebrateErrors } from 'celebrate';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 /* ---------- Middleware ---------- */
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 app.use(logger);
 
 /* ---------- Health check (ВАЖЛИВО ДЛЯ RENDER) ---------- */
