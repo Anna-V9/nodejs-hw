@@ -21,14 +21,9 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(logger);
 
-/* ---------- Health check ---------- */
-app.get('/', (req, res) => {
-  res.status(200).send('OK');
-});
-
 /* ---------- Routes ---------- */
-app.use('/api/notes', notesRouter);   
-app.use('/api/auth', authRouter);     
+app.use(notesRouter);    // без префікса
+app.use(authRouter);     // без префікса
 
 /* ---------- Celebrate validation errors ---------- */
 app.use(celebrateErrors());
