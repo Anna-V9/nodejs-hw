@@ -1,4 +1,5 @@
 import { User } from '../models/user.js';
+import { Session } from '../models/session.js';
 import httpErrors from 'http-errors';
 const { createHttpError } = httpErrors;
 import jwt from 'jsonwebtoken';
@@ -8,8 +9,77 @@ import fs from 'fs';
 import path from 'path';
 import handlebars from 'handlebars';
 import dotenv from 'dotenv';
+import { createSession, setSessionCookies } from '../services/auth.js';
 
 dotenv.config();
+
+
+export const registerUser = async (req, res, next) => {
+  try {
+    const { email, password, username } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) throw createHttpError(409, 'Email already registered');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ email, password: hashedPassword, username });
+
+    res.status(201).json({ message: 'User registered successfully', userId: user._id });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+export const loginUser = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) throw createHttpError(401, 'Invalid email or password');
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw createHttpError(401, 'Invalid email or password');
+
+    const session = await createSession(user._id);
+    setSessionCookies(res, session);
+
+    res.status(200).json({ message: 'Login successful', userId: user._id });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+export const logoutUser = async (req, res, next) => {
+  try {
+    const accessToken = req.cookies?.accessToken;
+    if (accessToken) {
+      await Session.deleteOne({ accessToken });
+      res.clearCookie('accessToken');
+    }
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+export const refreshUserSession = async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) throw createHttpError(401, 'Missing refresh token');
+
+    const session = await Session.findOne({ refreshToken });
+    if (!session || session.refreshTokenValidUntil < new Date())
+      throw createHttpError(401, 'Refresh token expired');
+
+    const newSession = await createSession(session.userId);
+    setSessionCookies(res, newSession);
+
+    res.status(200).json({ message: 'Session refreshed successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 export const requestResetEmail = async (req, res, next) => {
@@ -17,7 +87,6 @@ export const requestResetEmail = async (req, res, next) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-  
     if (!user) {
       return res.status(200).json({ message: 'Password reset email sent successfully' });
     }
@@ -39,11 +108,12 @@ export const requestResetEmail = async (req, res, next) => {
       link: `${process.env.FRONTEND_DOMAIN}/reset-password?token=${token}`,
     });
 
-    try {
-      await sendEmail({ to: user.email, subject: 'Reset your password', html });
-    } catch  {
-      throw createHttpError(500, 'Failed to send the email, please try again later.');
-    }
+    await sendEmail({
+      from: process.env.SMTP_FROM,
+      to: user.email,
+      subject: 'Reset your password',
+      html,
+    });
 
     res.status(200).json({ message: 'Password reset email sent successfully' });
   } catch (err) {

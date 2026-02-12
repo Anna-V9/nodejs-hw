@@ -10,12 +10,23 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const saveFileToCloudinary = (buffer) => {
+export const saveFileToCloudinary = (buffer, filename) => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream({ folder: 'avatars' }, (error, result) => {
-      if (error) return reject(error);
-      resolve(result);
-    });
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'avatars',
+        resource_type: 'image',
+        overwrite: true,
+        use_filename: true,
+        unique_filename: false,
+        public_id: filename ? filename.replace(/\.[^/.]+$/, "") : undefined, 
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
     const readable = new Readable();
     readable.push(buffer);
     readable.push(null);

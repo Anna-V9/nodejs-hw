@@ -1,14 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import { connectMongoDB } from './db/connectMongoDB.js';
 import { logger } from './middleware/logger.js';
-import notesRouter from './routes/notesRoutes.js';
-import authRouter from './routes/authRoutes.js'; 
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { errors as celebrateErrors } from 'celebrate';
-import cookieParser from 'cookie-parser';
+
+import notesRouter from './routes/notesRoutes.js';
+import authRouter from './routes/authRoutes.js'; 
 import userRouter from './routes/userRoutes.js';
 
 dotenv.config();
@@ -27,11 +28,14 @@ app.use(notesRouter);
 app.use(authRouter);
 app.use(userRouter);  
 
-/* ---------- Celebrate validation errors ---------- */
+/* ---------- Handlers ---------- */
+// 404 для непризначених маршрутів
+app.use(notFoundHandler);
+
+// Celebrate validation errors
 app.use(celebrateErrors());
 
-/* ---------- Handlers ---------- */
-app.use(notFoundHandler);
+// Глобальна обробка помилок
 app.use(errorHandler);
 
 /* ---------- Start Server ---------- */
