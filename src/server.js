@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { connectMongoDB } from './db/connectMongoDB.js';
 import { logger } from './middleware/logger.js';
 import notesRouter from './routes/notesRoutes.js';
+import authRouter from './routes/authRoutes.js'; 
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { errors as celebrateErrors } from 'celebrate';
@@ -20,13 +21,14 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(logger);
 
-/* ---------- Health check (ВАЖЛИВО ДЛЯ RENDER) ---------- */
+/* ---------- Health check ---------- */
 app.get('/', (req, res) => {
   res.status(200).send('OK');
 });
 
 /* ---------- Routes ---------- */
-app.use(notesRouter);
+app.use('/api/notes', notesRouter);   
+app.use('/api/auth', authRouter);     
 
 /* ---------- Celebrate validation errors ---------- */
 app.use(celebrateErrors());
