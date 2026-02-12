@@ -1,12 +1,10 @@
 import express from 'express';
+import { updateUserAvatar } from '../controllers/userController.js';
 import { authenticate } from '../middleware/authenticate.js';
-
+import { upload } from '../middleware/multer.js';
 
 const router = express.Router();
 
-
-router.patch('/me/avatar', authenticate, async (req, res) => {
-  res.status(501).json({ message: 'Avatar upload not implemented yet' });
-});
+router.patch('/users/me/avatar', authenticate, upload.single('avatar'), updateUserAvatar);
 
 export default router;
