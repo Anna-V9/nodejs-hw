@@ -6,7 +6,7 @@ import { logger } from './middleware/logger.js';
 import notesRouter from './routes/notesRoutes.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { errors as celebrateErrors } from 'celebrate'; 
+import { errors as celebrateErrors } from 'celebrate';
 
 dotenv.config();
 
@@ -16,13 +16,18 @@ const PORT = process.env.PORT || 3000;
 /* ---------- Middleware ---------- */
 app.use(cors());
 app.use(express.json());
-app.use(logger); 
+app.use(logger);
+
+/* ---------- Health check (ВАЖЛИВО ДЛЯ RENDER) ---------- */
+app.get('/', (req, res) => {
+  res.status(200).send('OK');
+});
 
 /* ---------- Routes ---------- */
 app.use(notesRouter);
 
 /* ---------- Celebrate validation errors ---------- */
-app.use(celebrateErrors()); 
+app.use(celebrateErrors());
 
 /* ---------- Handlers ---------- */
 app.use(notFoundHandler);
@@ -31,7 +36,7 @@ app.use(errorHandler);
 /* ---------- Start Server ---------- */
 const startServer = async () => {
   try {
-    await connectMongoDB(); 
+    await connectMongoDB();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
