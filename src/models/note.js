@@ -5,17 +5,25 @@ const noteSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      trim: true, 
+      trim: true,
     },
     content: {
       type: String,
-      default: '', 
+      default: '',
       trim: true,
     },
     tag: {
       type: String,
-      enum: ['Todo', 'Work', 'Personal', 'Other'], 
-      default: 'Todo', 
+      enum: [
+        'Meeting',
+        'Shopping',
+        'Ideas',
+        'Travel',
+        'Finance',
+        'Health',
+        'Important'
+      ],
+      default: 'Meeting',
       trim: true,
     },
   },
