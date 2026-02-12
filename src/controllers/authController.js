@@ -16,14 +16,18 @@ dotenv.config();
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { email, password, username } = req.body;
+    const { email, password } = req.body;
+
     const existingUser = await User.findOne({ email });
-    if (existingUser) throw createHttpError(409, 'Email already registered');
+    if (existingUser) throw createHttpError(400, 'Email already registered');
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword, username });
+    const user = await User.create({ email, password: hashedPassword });
 
-    res.status(201).json({ message: 'User registered successfully', userId: user._id });
+    const session = await createSession(user._id);
+    setSessionCookies(res, session);
+
+    res.status(201).json({ user });
   } catch (err) {
     next(err);
   }
@@ -33,16 +37,20 @@ export const registerUser = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
     const user = await User.findOne({ email });
     if (!user) throw createHttpError(401, 'Invalid email or password');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw createHttpError(401, 'Invalid email or password');
 
+
+    await Session.deleteMany({ userId: user._id });
+
     const session = await createSession(user._id);
     setSessionCookies(res, session);
 
-    res.status(200).json({ message: 'Login successful', userId: user._id });
+    res.status(200).json({ user });
   } catch (err) {
     next(err);
   }
@@ -51,12 +59,16 @@ export const loginUser = async (req, res, next) => {
 
 export const logoutUser = async (req, res, next) => {
   try {
-    const accessToken = req.cookies?.accessToken;
-    if (accessToken) {
-      await Session.deleteOne({ accessToken });
+    const sessionId = req.cookies?.sessionId;
+
+    if (sessionId) {
+      await Session.deleteOne({ _id: sessionId });
       res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      res.clearCookie('sessionId');
     }
-    res.status(200).json({ message: 'Logout successful' });
+
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
@@ -65,17 +77,23 @@ export const logoutUser = async (req, res, next) => {
 
 export const refreshUserSession = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
-    if (!refreshToken) throw createHttpError(401, 'Missing refresh token');
+    const { refreshToken, sessionId } = req.cookies;
 
-    const session = await Session.findOne({ refreshToken });
-    if (!session || session.refreshTokenValidUntil < new Date())
+    if (!refreshToken || !sessionId) throw createHttpError(401, 'Missing refresh token or sessionId');
+
+    const session = await Session.findOne({ _id: sessionId, refreshToken });
+    if (!session || session.refreshTokenValidUntil < new Date()) {
       throw createHttpError(401, 'Refresh token expired');
+    }
+
+
+    await Session.deleteOne({ _id: sessionId });
 
     const newSession = await createSession(session.userId);
     setSessionCookies(res, newSession);
 
-    res.status(200).json({ message: 'Session refreshed successfully' });
+    const user = await User.findById(session.userId);
+    res.status(200).json({ user });
   } catch (err) {
     next(err);
   }
@@ -108,12 +126,16 @@ export const requestResetEmail = async (req, res, next) => {
       link: `${process.env.FRONTEND_DOMAIN}/reset-password?token=${token}`,
     });
 
-    await sendEmail({
-      from: process.env.SMTP_FROM,
-      to: user.email,
-      subject: 'Reset your password',
-      html,
-    });
+    try {
+      await sendEmail({
+        from: process.env.SMTP_FROM,
+        to: user.email,
+        subject: 'Reset your password',
+        html,
+      });
+    } catch {
+      throw createHttpError(500, 'Failed to send the email, please try again later.');
+    }
 
     res.status(200).json({ message: 'Password reset email sent successfully' });
   } catch (err) {

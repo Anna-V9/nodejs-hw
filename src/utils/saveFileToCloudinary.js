@@ -10,7 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const saveFileToCloudinary = (buffer, filename) => {
+export const saveFileToCloudinary = (buffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -19,7 +19,6 @@ export const saveFileToCloudinary = (buffer, filename) => {
         overwrite: true,
         use_filename: true,
         unique_filename: false,
-        public_id: filename ? filename.replace(/\.[^/.]+$/, "") : undefined, 
       },
       (error, result) => {
         if (error) return reject(error);

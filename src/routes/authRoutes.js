@@ -24,6 +24,7 @@ router.post(
   requestResetEmail
 );
 
+
 router.post(
   '/auth/reset-password',
   celebrate({ body: resetPasswordSchema }),
@@ -37,14 +38,17 @@ router.post(
   registerUser
 );
 
+
 router.post(
   '/auth/login',
   celebrate({ body: loginUserSchema }),
   loginUser
 );
 
+
 router.post('/auth/logout', logoutUser);
 
-router.get('/auth/refresh', refreshUserSession);
+
+router.post('/auth/refresh', refreshUserSession);
 
 export default router;
