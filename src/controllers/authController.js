@@ -1,7 +1,6 @@
 import { User } from '../models/user.js';
 import { Session } from '../models/session.js';
-import httpErrors from 'http-errors';
-const { createHttpError } = httpErrors;
+import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../utils/sendMail.js';
 import bcrypt from 'bcrypt';
@@ -13,7 +12,7 @@ import { createSession, setSessionCookies } from '../services/auth.js';
 
 dotenv.config();
 
-/* ---------- Register User ---------- */
+/* ------------------ Register User ------------------ */
 export const registerUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -33,7 +32,7 @@ export const registerUser = async (req, res, next) => {
   }
 };
 
-/* ---------- Login User ---------- */
+/* ------------------ Login User ------------------ */
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -44,7 +43,7 @@ export const loginUser = async (req, res, next) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw createHttpError(401, 'Invalid email or password');
 
-    // Видаляємо всі старі сесії цього користувача
+
     await Session.deleteMany({ userId: user._id });
 
     const session = await createSession(user._id);
@@ -56,7 +55,7 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
-/* ---------- Logout User ---------- */
+/* ------------------ Logout User ------------------ */
 export const logoutUser = async (req, res, next) => {
   try {
     const sessionId = req.cookies?.sessionId;
@@ -74,40 +73,35 @@ export const logoutUser = async (req, res, next) => {
   }
 };
 
-/* ---------- Refresh User Session ---------- */
+/* ------------------ Refresh User Session ------------------ */
 export const refreshUserSession = async (req, res, next) => {
   try {
     const { refreshToken, sessionId } = req.cookies;
 
-    if (!refreshToken || !sessionId)
-      throw createHttpError(401, 'Missing refresh token or sessionId');
+    if (!refreshToken || !sessionId) throw createHttpError(401, 'Missing refresh token or sessionId');
 
     const session = await Session.findOne({ _id: sessionId, refreshToken });
     if (!session || session.refreshTokenValidUntil < new Date()) {
       throw createHttpError(401, 'Refresh token expired');
     }
 
-    // Видаляємо стару сесію
     await Session.deleteOne({ _id: sessionId });
 
-    // Створюємо нову сесію
     const newSession = await createSession(session.userId);
     setSessionCookies(res, newSession);
 
-    // Відповідаємо лише повідомленням
     res.status(200).json({ message: 'Session refreshed successfully' });
   } catch (err) {
     next(err);
   }
 };
 
-/* ---------- Request Password Reset Email ---------- */
+/* ------------------ Request Password Reset ------------------ */
 export const requestResetEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-    // Щоб не розкривати, чи існує email
     if (!user) {
       return res.status(200).json({ message: 'Password reset email sent successfully' });
     }
@@ -146,7 +140,7 @@ export const requestResetEmail = async (req, res, next) => {
   }
 };
 
-/* ---------- Reset Password ---------- */
+/* ------------------ Reset Password ------------------ */
 export const resetPassword = async (req, res, next) => {
   try {
     const { token, password } = req.body;
